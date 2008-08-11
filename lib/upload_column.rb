@@ -365,6 +365,7 @@ module UploadColumn
       self.ext = ext
       self.original_basename = basename
       FileUtils.copy_file( path, self.path )
+      File.chmod(options[:permissions], self.path)
     end
     
     def save
