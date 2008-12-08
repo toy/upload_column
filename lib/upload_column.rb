@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'tempfile'
 require 'RMagick'
-    
+
 module UploadColumn
   def self.append_features(base) #:nodoc:
     super
@@ -36,11 +36,11 @@ module UploadColumn
     "audio/x-ms-wma" => "wma",
     "audio/x-ms-wax" => "wax",
     "audio/x-wav" => "wav",
-    "image/x-xbitmap" => "xbm",             
-    "image/x-xpixmap" => "xpm",             
-    "image/x-xwindowdump" => "xwd",             
-    "text/css" => "css",             
-    "text/html" => "html",                          
+    "image/x-xbitmap" => "xbm",
+    "image/x-xpixmap" => "xpm",
+    "image/x-xwindowdump" => "xwd",
+    "text/css" => "css",
+    "text/html" => "html",
     "text/javascript" => "js",
     "text/plain" => "txt",
     "text/xml" => "xml",
@@ -51,16 +51,16 @@ module UploadColumn
     "video/x-ms-wmv" => "wmv",
     "video/x-flv" => "flv"
   }
-  
+
   IMAGE_MIME_EXTENSIONS = {
     "image/gif" => "gif",
     "image/jpeg" => "jpg",
     "image/pjpeg" => "jpg",
     "image/x-png" => "png",
     "image/jpg" => "jpg",
-    "image/png" => "png", 
+    "image/png" => "png",
   }
-  
+
   IMAGE_EXTENSIONS = Set.new( [ "jpg", "jpeg", "png", "gif" ] )
 
   EXTENSIONS = Set.new MIME_EXTENSIONS.values
@@ -84,7 +84,7 @@ module UploadColumn
 
   # = Basics
   # When you call an upload_column field, an instance of this class will be returned.
-  # 
+  #
   # Suppose a +User+ model has a +picture+ upload_column, like so:
   #     class User < ActiveRecord::Base
   #       upload_column :picture
@@ -108,24 +108,24 @@ module UploadColumn
 
     def initialize(options, instance, attribute, dir = nil, filename = nil, suffix = nil)
       options = DEFAULT_OPTIONS.merge(options)
-  
+
       @options = options
       @instance = instance
       @attribute = attribute
       @filename = filename || instance[attribute]
       @suffix = suffix
-      
+
       @relative_dir = dir
-      @relative_dir ||= self.relative_store_dir 
-      
+      @relative_dir ||= self.relative_store_dir
+
       unless options[:web_root].blank?
         options[:web_root] = '/' << options[:web_root] unless options[:web_root] =~ %r{^/}
       end
-      
+
       unless options[:tmp_dir].blank?
         options[:tmp_dir][0] = '' if options[:tmp_dir] =~ %r{^/}
       end
-  
+
       if suffix.nil? and options[:versions]
         @versions = {}
         for version in options[:versions]
@@ -138,12 +138,12 @@ module UploadColumn
     def to_s #:nodoc:
       filename
     end
-    
+
     # Returns the file's size
     def size
       File.size(self.path)
     end
-    
+
     # checks whether the file exists
     def exists?
       File.exists?(self.path)
@@ -184,13 +184,13 @@ module UploadColumn
     # Use +process!+ in an _after_assign callback, like so:
     #     class User < ActiveRecord::Base
     #       upload_column :picture
-    #       
+    #
     #       def picture_after_assign
     #         picture.process! do |img|
     #           img.solarize
     #         end
     #       end
-    # 
+    #
     #     end
     # This is an easy way to apply some RMagick effect to an image right after it's uploaded
     #
@@ -208,7 +208,7 @@ module UploadColumn
       GC.start
       true
     end
-    
+
     # Returns the (absolute) directory where the file is currently stored.
     def dir
       File.expand_path(self.relative_dir, options[:root_path])
@@ -237,7 +237,7 @@ module UploadColumn
     def store_dir
       File.expand_path(self.relative_store_dir, options[:root_path])
     end
-    
+
     # Like +store_dir+ but will return the directory relative to the :root_path option
     def relative_store_dir
       sd = self.instance.send("#{self.attribute}_store_dir")
@@ -248,12 +248,12 @@ module UploadColumn
       end
       return sd
     end
-    
+
     # Returns the directory where the file will be temporarily stored between form redisplays
     def tmp_dir
       File.expand_path(self.relative_tmp_dir, options[:root_path])
     end
-    
+
     # Like +tmp_dir+ but will return the directory relative to the :root_path option
     def relative_tmp_dir
       sd = self.instance.send("#{self.attribute}_tmp_dir")
@@ -296,36 +296,36 @@ module UploadColumn
     end
 
     private
-    
+
     # Set the filename, use at your own risk!
     def filename=(name)
       @filename = sanitize_filename( name )
     end
-    
+
     def relative_dir=(dir)
       @relative_dir = dir
     end
-    
+
     # Assigns a file to this upload column and stores it in a temporary file,
     # Note: does not check the validity of the file!
     def assign(file, directory = nil )
-            
+
       unless directory
         directory = join_path( self.relative_tmp_dir, generate_temp_name )
       end
-      
+
       #
       #self.filename = fetch_filename( self.instance, basename, ext )
       self.relative_dir = directory
-      
+
       FileUtils.mkpath(self.dir)
-      
+
       # stored uploaded file into self.path
       # If it was a Tempfile object, the temporary file will be
       # cleaned up automatically, so we do not have to care for this
       # Large files will be passed as tempfiles, whereas small ones
       # will be passed as StringIO
-      if temp_path = ( file.respond_to?(:local_path) ? file.local_path : file.path ) and temp_path != "" 
+      if temp_path = ( file.respond_to?(:local_path) ? file.local_path : file.path ) and temp_path != ""
         if File.exists?(temp_path)
           temp_filename = file.original_filename if file.respond_to?(:original_filename)
           temp_filename ||= File.basename(file.path)
@@ -347,18 +347,18 @@ module UploadColumn
       else
         raise ArgumentError.new("Do not know how to handle #{file.inspect}")
       end
-      
+
       self.original_basename = basename
- 
+
       versions.each { |k, v| v.send(:assign_version, self.path, self.relative_dir, self.filename, self.original_basename, self.ext) } if versions
-      
+
       File.chmod(options[:permissions], self.path)
-      
+
       set_magic_columns
-      
+
       return true
     end
-    
+
     def assign_version( path, directory, filename, basename, ext )
       self.relative_dir = directory
       self.filename = filename
@@ -367,13 +367,13 @@ module UploadColumn
       FileUtils.copy_file( path, self.path )
       File.chmod(options[:permissions], self.path)
     end
-    
+
     def save
-        
+
       new_dir = self.store_dir
       new_filename = sanitize_filename(fetch_filename(self.instance, self.original_basename, self.ext))
       new_path = join_path( new_dir, expand_filename(new_filename) )
-      
+
       # create the directory first
       FileUtils.mkpath(new_dir) #unless File.exists?(new_di)
 
@@ -385,7 +385,7 @@ module UploadColumn
 
       versions.each { |k, v| v.send(:save) } if versions
     end
-    
+
     def fetch_filename(inst, original, ext)
       fn = self.instance.send("#{self.attribute}_filename", original, ext)
       if options[:filename].is_a?( Proc )
@@ -395,7 +395,7 @@ module UploadColumn
       end
       fn
     end
-    
+
     def set_magic_columns
       self.instance.class.column_names.each do |column|
         if column =~ /^#{self.attribute}_(.*)$/
@@ -408,7 +408,7 @@ module UploadColumn
         end
       end
     end
-    
+
     def delete_temporary_files
       Dir.glob(join_path(self.tmp_dir, "*")).each do |file|
         # Check if the file was created more than an hour ago
@@ -427,7 +427,7 @@ module UploadColumn
         FileUtils.rm_rf( self.dir )
       end
     end
-    
+
     def set_path(temp_path)
       return if temp_path == self.relative_path # We do not need to set this path
       raise ArgumentError.new("invalid format of '#{temp_path}'") unless temp_path =~ %r{^((\d+\.)+\d+)/([^/;]+)(;([^/;]+))?$}
@@ -443,7 +443,7 @@ module UploadColumn
         end
       end
     end
-    
+
     def check_integrity( extension )
       if self.options[:validate_integrity]
         unless self.options[:extensions].include?( extension )
@@ -467,7 +467,7 @@ module UploadColumn
     # Split the filename into base and extension
     def split_extension(fn)
       # regular expressions to try for identifying extensions
-      ext_regexps = [ 
+      ext_regexps = [
         /^(.+)\.([^.]+\.[^.]+)$/, # matches "something.tar.gz"
         /^(.+)\.([^.]+)$/ # matches "something.jpg"
       ]
@@ -488,7 +488,7 @@ module UploadColumn
       name = "unnamed" if name.size == 0
       name
     end
-    
+
     def expand_filename(fn)
       if suffix.nil?
         fn
@@ -505,7 +505,7 @@ module UploadColumn
       content_type = get_content_type( local_path )
       # Fetch the content type that was passed from the users browser
       content_type ||= file.content_type.chomp if file.respond_to?(:content_type) and file.content_type
-      
+
       # Is this one of our known content types?
       if content_type and options[:fix_file_extensions] and options[:mime_extensions][content_type]
         # If so, correct the extension
@@ -514,7 +514,7 @@ module UploadColumn
         return ext, content_type
       end
     end
-    
+
     # Try to use *nix exec to fetch content type
     def get_content_type( local_path )
       if options[:file_exec] and local_path
@@ -545,7 +545,7 @@ module UploadColumn
   #
   # See +image_column+ and the +README+ for more info
   class UploadedImage < UploadedFile
-    
+
     attr_reader :width, :height
     # Resize the image so that it will not exceed the dimensions passed
     # via geometry, geometry should be a string, formatted like '200x100' where
@@ -557,7 +557,7 @@ module UploadColumn
         end
       end
     end
-    
+
     # Resize and crop the image so that it will have the exact dimensions passed
     # via geometry, geometry should be a string, formatted like '200x100' where
     # the first number is the height and the second is the width
@@ -567,9 +567,56 @@ module UploadColumn
         img.crop_resized(h.to_i,w.to_i)
       end
     end
-    
-    private
-    
+
+    def dimensions
+      if main_width && main_height
+        if suffix.nil?
+          {:w => main_width, :h => main_height}
+        elsif geometry = options[:versions][suffix.to_sym]
+          if geometry.is_a?(String) && geometry_parts = geometry.match(/^([c]?)(\d*)x(\d*)$/)
+            geometry_width, geometry_height = [geometry_parts[2], geometry_parts[3]].map{ |v| v.blank? ? nil : v.to_i }
+            if options[:crop] || geometry_parts[1]['c']
+              {:w => geometry_width, :h => geometry_height}
+            else
+              if geometry_height && geometry_width
+                if geometry_width / geometry_height > main_width / main_height
+                  {:w => (main_width.to_f * geometry_height / main_height).round, :h => geometry_height}
+                else
+                  {:w => geometry_width, :h => (main_height.to_f * geometry_width / main_width).round}
+                end
+              elsif geometry_height
+                {:w => (main_width.to_f * geometry_height / main_height).round, :h => geometry_height}
+              elsif geometry_width
+                {:w => geometry_width, :h => (main_height.to_f * geometry_width / main_width).round}
+              end
+            end
+          end
+        end
+      end || {}
+    end
+
+    def width
+      dimensions[:w]
+    end
+
+    def height
+      dimensions[:h]
+    end
+
+    def size
+      dimensions.values_at(:w, :h) * 'x'
+    end
+
+  private
+
+    def main_width
+      instance.send("#{attribute}_width")
+    end
+
+    def main_height
+      instance.send("#{attribute}_height")
+    end
+
     # Convert the image to format
     def convert!(format)
       process! do |img|
@@ -577,9 +624,9 @@ module UploadColumn
         img
       end
     end
-    
+
     # I eat your memory for breakfast, don't use me!
-    def width
+    def width_through_process
       unless @width
         img = process do |img|
           @width = img.columns
@@ -590,8 +637,8 @@ module UploadColumn
       end
       @width
     end
-    
-    def height
+
+    def height_through_process
       unless @height
         img = process do |img|
           @width = img.columns
@@ -602,16 +649,16 @@ module UploadColumn
       end
       @height
     end
-    
+
     def set_magic_columns
       super
       self.instance.class.column_names.each do |column|
         if column =~ /^#{self.attribute}_(.*)$/
           case $1
           when "width"
-            self.instance.send("#{self.attribute}_width=".to_sym, width)
+            self.instance.send("#{self.attribute}_width=".to_sym, width_through_process)
           when "height"
-            self.instance.send("#{self.attribute}_height=".to_sym, height)
+            self.instance.send("#{self.attribute}_height=".to_sym, height_through_process)
           when /^exif_(.*)$/
             if self.mime_type == "image/jpeg"
               require_gem 'exifr'
@@ -621,13 +668,13 @@ module UploadColumn
           end
         end
       end
-      
+
     end
-    
+
     def assign(file, directory = nil )
       # Call superclass method and check for success (not if this actually IS a version!)
       if super(file, directory)
-        
+
         if options[:force_format] and options[:extensions].include?(options[:force_format].to_s)
           convert!(options[:force_format])
           @mime_type = options[:mime_extensions][options[:force_format]]
@@ -635,7 +682,7 @@ module UploadColumn
           self.versions.each { |k, v| v.send(:convert!, options[:force_format]) } if self.versions
         end
         if suffix.nil? and options[:versions].respond_to?( :to_hash )
-        
+
           options[:versions].to_hash.each do |name, size|
             # Check if size is a string, and if so resize the respective version
             if size.is_a?( String )
@@ -660,13 +707,13 @@ module UploadColumn
         return false
       end
     end
-    
+
     def fetch_file_extension( file, local_path, ext )
       ext, content_type = super(file, local_path, ext)
       ext = options[:force_format].to_s if options[:force_format] and options[:extensions].include?(options[:force_format].to_s)
       return ext, content_type
     end
-    
+
   end
 
   module ClassMethods
@@ -681,7 +728,7 @@ module UploadColumn
     # [+store_dir+] Determines where the file will be stored permanently, you can pass a String or a Proc that takes the current instance and the attribute name as parameters, see the +README+ for detaills.
     # [+tmp_dir+] Determines where the file will be stored temporarily before it is stored to its final location, you can pass a String or a Proc that takes the current instance and the attribute name as parameters, see the +README+ for detaills.
     # [+old_files+] Determines what happens when a file becomes outdated. It can be set to one of <tt>:keep</tt>, <tt>:delete</tt> and <tt>:replace</tt>. If set to <tt>:keep</tt> UploadColumn will always keep old files, and if set to :delete it will always delete them. If it's set to :replace, the file will be replaced when a new one is uploaded, but will be kept when the associated object is deleted. Default to :delete.
-    # 
+    #
     # and even the following less common ones
     # [+permissions+] Specify the Unix permissions to be used with UploadColumn. Defaults to 0644.
     # [+root_path+] The root path where image will be stored, it will be prepended to store_dir and tmp_dir
@@ -694,7 +741,7 @@ module UploadColumn
     def upload_column(attr, options={})
       register_functions( attr, UploadedFile, options )
     end
-    
+
     # Creates a column specifically designed for images, see +upload_column+ for options
     # Additinally you may specify:
     # [+crop+] Specifies whether the image will be cropped to fit the dimensions passed
@@ -707,38 +754,38 @@ module UploadColumn
       options[:root_path] ||= File.join(RAILS_ROOT, "public", "images")
       options[:mime_extensions] ||= IMAGE_MIME_EXTENSIONS
       options[:extensions] ||= IMAGE_EXTENSIONS
-      
+
       register_functions( attr, UploadedImage, options )
     end
-    
+
     # Validates whether the images extension is in the array passed to :extensions.
     # By default this is the UploadColumn::EXTENSIONS array
-    # 
+    #
     # Use this to prevent upload of files which could potentially damage your system,
     # such as executables or script files (.rb, .php, etc...).
     #
     # WARNING: validates_integrity_of does NOT work with :validates_integrity => true (which is the default)!
-    # 
+    #
     # EVEN STRONGER WARNING: Even if you use validates_integrity_of, potentially harmful files may still be uploaded to your
     # tmp dir, make sure that these are not in your public directory, otherwise a hacker might seriously damage
     # your system (by uploading .rb files or similar), if you want to avoid this problem, use :validate_integrity => true instead!
     def validates_integrity_of(*attr_names)
       configuration = { :message => "is not of a valid file type." }
       configuration.update(attr_names.pop) if attr_names.last.is_a?(Hash)
-     
+
       validates_each(attr_names, configuration) do |record, attr, column|
         if column and not column.options[:extensions].include?( column.filename_extension )
           record.errors.add(attr, configuration[:message])
         end
       end
     end
-    
+
     private
-    
+
     def register_functions(attr, column_class, options={})
       upload_column_attr = "@#{attr}_file".to_sym
       upload_column_method = "#{attr}".to_sym
-  
+
       define_method upload_column_method do
         result = instance_variable_get( upload_column_attr )
         if result.nil?
@@ -762,8 +809,8 @@ module UploadColumn
           old_file = uploaded_file.dup if uploaded_file
           uploaded_file ||= column_class.new(options, self, attr)
           # We simply write over the temp version if it exists
-          
-          
+
+
           if file and not file.blank? and file.is_a?(String)
             # if file is a non-empty string it is most probably
             # the filename and the user forgot to set the encoding
@@ -772,7 +819,7 @@ module UploadColumn
             # we raise a more meaningful exception rightaway.
             raise TypeError.new("Do not know how to handle a string with value '#{file}' that was passed to an upload_column. Check if the form's encoding has been set to 'multipart/form-data'.")
           end
-                   
+
           filesize = file.size if file.respond_to?(:size)
           filesize = file.stat.size if not file and file.respond_to?(:stat)
           if file and not file.blank? and filesize != 0 and uploaded_file.send(:assign, file)
@@ -789,7 +836,7 @@ module UploadColumn
           end
         end
       end
-  
+
       define_method "#{attr}_temp" do
         uploaded_file = send(upload_column_method)
         # Return the real path and the original(!) filename, we need that to fetch the filename later ;)
@@ -801,7 +848,7 @@ module UploadColumn
           return ""
         end
       end
-  
+
       define_method "#{attr}_temp=" do |temp_path|
         if temp_path and temp_path != ""
           uploaded_file = instance_variable_get( upload_column_attr )
@@ -819,19 +866,19 @@ module UploadColumn
       # Callbacks the user can use to hook into uploadcolumn
       define_method "#{attr}_filename" do |original, ext|
       end
-      
+
       define_method "#{attr}_store_dir" do
       end
-      
+
       define_method "#{attr}_tmp_dir" do
       end
-      
+
       define_method "#{attr}_after_assign" do
       end
 
       # Hook UploadColumn into Rails via before_save, after_save and after_destroy
       after_save_method = "#{attr}_after_save".to_sym
-  
+
       define_method after_save_method do
         uploaded_file = send(upload_column_method)
         # Check if the filename is blank, is this a tmp file?
@@ -848,32 +895,32 @@ module UploadColumn
           FileUtils.rm_rf(old_dir)
         end
       end
-  
+
       after_save after_save_method
-      
+
 #      before_save_method = "#{attr}_before_save".to_sym
-#  
+#
 #      define_method before_save_method do
 #        uploaded_file = send(upload_column_method)
 #        if uploaded_file and uploaded_file.dir != uploaded_file.store_dir
 #          uploaded_file.send(:filename=, uploaded_file.send(:fetch_filename, self, uploaded_file.send(:original_basename), uploaded_file.send(:ext)))
 #        end
 #      end
-  
+
 #      before_save before_save_method
-  
+
       # After destroy
       after_destroy_method = "#{attr}_after_destroy".to_sym
-  
+
       define_method after_destroy_method do
         uploaded_file = send(upload_column_method)
         uploaded_file.send(:delete) if uploaded_file and not [ :keep, :replace ].include?(options[:old_files])
       end
       after_destroy after_destroy_method
-  
+
       private after_save_method, after_destroy_method
-      
-      
+
+
     end
 
   end
