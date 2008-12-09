@@ -569,25 +569,21 @@ module UploadColumn
     end
 
     def dimensions
-      if main_width && main_height
+      main_width = magic_column('width')
+      main_height = magic_column('height')
+      @dimensions ||= if main_width && main_height
         if suffix.nil?
-          {:w => main_width, :h => main_height}
+          [main_width, main_height]
         elsif geometry = options[:versions][suffix.to_sym]
           if geometry.is_a?(String) && geometry_parts = geometry.match(/^([c]?)(\d*)x(\d*)$/)
             geometry_width, geometry_height = [geometry_parts[2], geometry_parts[3]].map{ |v| v.blank? ? nil : v.to_i }
             if options[:crop] || geometry_parts[1]['c']
-              {:w => geometry_width, :h => geometry_height}
-            else
-              if geometry_height && geometry_width
-                if geometry_width / geometry_height > main_width / main_height
-                  {:w => (main_width.to_f * geometry_height / main_height).round, :h => geometry_height}
-                else
-                  {:w => geometry_width, :h => (main_height.to_f * geometry_width / main_width).round}
-                end
-              elsif geometry_height
-                {:w => (main_width.to_f * geometry_height / main_height).round, :h => geometry_height}
-              elsif geometry_width
-                {:w => geometry_width, :h => (main_height.to_f * geometry_width / main_width).round}
+              [geometry_width, geometry_height]
+            elsif geometry_height || geometry_width
+              if geometry_height && (geometry_width && geometry_width / geometry_height > main_width / main_height || !geometry_width)
+                [(main_width.to_f * geometry_height / main_height).round, geometry_height]
+              else
+                [geometry_width, (main_height.to_f * geometry_width / main_width).round]
               end
             end
           end
@@ -596,26 +592,22 @@ module UploadColumn
     end
 
     def width
-      dimensions[:w]
+      dimensions[0]
     end
 
     def height
-      dimensions[:h]
+      dimensions[1]
     end
 
     def size
       dimensions.values_at(:w, :h) * 'x'
     end
 
+    def magic_column(name)
+      instance.send("#{attribute}_#{name}") if instance.class.column_names.include?("#{attribute}_#{name}")
+    end
+
   private
-
-    def main_width
-      instance.send("#{attribute}_width")
-    end
-
-    def main_height
-      instance.send("#{attribute}_height")
-    end
 
     # Convert the image to format
     def convert!(format)
