@@ -588,7 +588,7 @@ module UploadColumn
             end
           end
         end
-      end || {}
+      end || []
     end
 
     def width
@@ -600,7 +600,7 @@ module UploadColumn
     end
 
     def size
-      dimensions.values_at(:w, :h) * 'x'
+      dimensions * 'x'
     end
 
     def magic_column(name)
