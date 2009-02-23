@@ -12,7 +12,7 @@ module UploadColumnHelper
   # Note: if you use file_field instead of upload_column_field, the file will not be
   # stored across form redisplays.
   def upload_column_field(object, method, options={})
-    result = ActionView::Helpers::InstanceTag.new(object, method, self, nil, options.delete(:object)).to_input_field_tag("file", options)
+    result = ActionView::Helpers::InstanceTag.new(object, method, self, options.delete(:object)).to_input_field_tag("file", options)
     result << ActionView::Helpers::InstanceTag.new(object, method.to_s+"_temp", self).to_input_field_tag("hidden", {})
   end
   
