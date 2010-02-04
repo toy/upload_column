@@ -279,11 +279,11 @@ module UploadColumn
     def mime_type
       return @mime_type if @mime_type
       case filename_extension
-      when "jpg":
+      when "jpg"
         return "image/jpeg"
-      when "gif":
+      when "gif"
         return "image/gif"
-      when "png":
+      when "png"
         return "image/png"
       else
         @mime_type = MIME_EXTENSIONS.invert[filename_extension]
